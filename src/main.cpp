@@ -10,7 +10,39 @@
 #include "PrusaLinkAPIStrategy.h"
 #include "SpoolmanManager.h"
 #include "HomeAssistantManager.h"
+
 #include "StubPrinterLinkStrategy.h"
+
+// ---------------------------------------------------------------------------
+// Board configuration
+//
+// These values may be supplied by PlatformIO build flags for different hardware
+// profiles. If not provided, the defaults below preserve the existing DevKit
+// behavior.
+// ---------------------------------------------------------------------------
+
+#ifndef USE_LCD
+#define USE_LCD 1
+#endif
+
+#ifndef USE_STATUS_LED
+#define USE_STATUS_LED 0
+#endif
+
+#ifndef STATUS_LED_PIN
+#define STATUS_LED_PIN 4
+#endif
+
+#if USE_LCD
+#ifndef LCD_SDA
+#define LCD_SDA 23
+#endif
+
+#ifndef LCD_SCL
+#define LCD_SCL 22
+#endif
+#endif
+
 #if USE_LCD
 #include "LCDManager.h"
 #endif
@@ -25,10 +57,6 @@ LEDManager ledManager;
 SemaphoreHandle_t g_httpMutex = nullptr;
 
 #if USE_LCD
-// LCD I2C pins
-#define LCD_SDA 23
-#define LCD_SCL 22
-
 // LCD Manager
 LCDManager lcdManager(0x27, 16, 2);
 #endif
