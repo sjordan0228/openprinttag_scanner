@@ -3,7 +3,9 @@
 #include "ConfigurationManager.h"
 #include "HomeAssistantManager.h"
 #include "NFCManager.h"
+#if USE_LCD
 #include "LCDManager.h"
+#endif
 #include "ConversionUtils.h"
 #include "SpoolmanManager.h"
 #include <Arduino.h>
@@ -23,8 +25,9 @@
 #include <base64.hpp>
 
 extern SemaphoreHandle_t g_httpMutex;
+#if USE_LCD
 extern LCDManager lcdManager;
-
+#endif
 static const char* TAG = "BluetoothManager";
 
 static constexpr size_t JSON_RESPONSE_CAPACITY = 2048;
@@ -236,11 +239,13 @@ static void process_command(const char* json) {
     }
     else if (strcmp(command, "write_config") == 0) {
         if (ConfigurationManager::getInstance().postConfigUpdate(json)) {
-            lcdManager.setScreenTimeoutMs(ConfigurationManager::getInstance().getLcdTimeoutMs());
-            ApplicationManager::getInstance().showStatusOnLCD();
-            snprintf(s_response_buffer, sizeof(s_response_buffer), "{\"status\":\"ok\"}");
-            Serial.printf("%s: Config updated successfully\n", TAG);
-        } else {
+#if USE_LCD
+    lcdManager.setScreenTimeoutMs(ConfigurationManager::getInstance().getLcdTimeoutMs());
+    ApplicationManager::getInstance().showStatusOnLCD();
+#endif
+    snprintf(s_response_buffer, sizeof(s_response_buffer), "{\"status\":\"ok\"}");
+    Serial.printf("%s: Config updated successfully\n", TAG);
+} else {
             snprintf(s_response_buffer, sizeof(s_response_buffer), "{\"error\":\"Failed to save config\"}");
             Serial.printf("%s: Config update failed\n", TAG);
         }
