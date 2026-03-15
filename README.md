@@ -1,4 +1,3 @@
-
 # OpenPrintTag Scanner
 
 ## Overview
@@ -28,13 +27,124 @@ Validated by the model author with a Prusa MK4S + MMU3 setup using PrusaLink. Th
 *   **Extensible Printer Strategy:** The `IPrinterLinkStrategy` interface allows for adding support for other printer control software in the future.
 *   **Polling Cadence:** Polls printer state on a short interval (about every 10 seconds in the model description) and syncs spool weight accordingly.
 
-# Hardware Setup
+## Hardware Setup
 
+## Supported Hardware Profiles
+
+The firmware now supports multiple hardware configurations using separate **PlatformIO environments** defined in `platformio.ini`.
+
+### 1. Full Scanner (Original Design)
+
+This matches the original OpenPrintTag scanner design.
+
+**Hardware:**
+
+- ESP32 DevKitC (ESP32‑WROOM‑32)
+- PN5180 NFC module
+- 16x2 I2C LCD display
+- Optional SK6812 RGBW status LED
+
+**PlatformIO environment:**
+
+```
+esp32dev
+```
+
+This build enables the LCD and uses the original PN5180 wiring described later in this document.
+
+---
+
+### 2. Compact Scanner (ESP32‑S3‑Zero)
+
+A smaller hardware profile designed for compact builds.
+
+**Hardware:**
+
+- ESP32‑S3‑Zero
+- PN5180 NFC module
+- Optional single SK6812 RGBW LED
+- **No LCD required**
+
+This version is intended for small enclosures where a display is unnecessary. Status feedback is provided through the LED and serial logs.
+
+**PlatformIO environment:**
+
+```
+esp32-s3-zero
+```
+
+Key differences from the full scanner:
+
+- LCD support disabled
+- Status LED enabled by default
+- Board‑specific PN5180 pin configuration provided via `platformio.ini`
+
+---
+
+Both hardware profiles use the same firmware codebase and differ only by build configuration.
+
+## Building the Firmware
+
+The project uses **PlatformIO environments** to support different hardware configurations.
+
+### Build the Full Scanner (ESP32 DevKit + LCD)
+
+Use the `esp32dev` environment.
+
+Example using PlatformIO CLI:
+
+```
+pio run -e esp32dev
+```
+
+Or select the **esp32dev** environment in the PlatformIO extension inside VS Code and click **Build**.
+
+### Build the Compact Scanner (ESP32‑S3‑Zero)
+
+Use the `esp32-s3-zero` environment.
+
+Example using PlatformIO CLI:
+
+```
+pio run -e esp32-s3-zero
+```
+
+Or select the **esp32-s3-zero** environment in the PlatformIO extension inside VS Code and click **Build**.
+
+These environments automatically configure:
+
+- LCD support
+- Status LED behavior
+- PN5180 pin mappings
+- Board‑specific settings
+
+No source code changes are required when switching hardware profiles.
+
+## ESP32‑S3‑Zero PN5180 Wiring
+
+When building the **compact scanner** using the `esp32-s3-zero` PlatformIO environment, the PN5180 module should be wired to the ESP32‑S3‑Zero as follows:
+
+| PN5180 Pin | ESP32‑S3‑Zero Pin | Notes |
+|------------|------------------|------|
+| RST | GPIO4 | Hardware reset |
+| NSS | GPIO5 | SPI chip select |
+| MOSI | GPIO6 | SPI data to PN5180 |
+| MISO | GPIO7 | SPI data from PN5180 |
+| SCK | GPIO8 | SPI clock |
+| BUSY | GPIO9 | Flow control |
+| GPIO | GPIO10 | Card detection (future use) |
+| IRQ | GPIO11 | Interrupt signal |
+| AUX | GPIO12 | Auxiliary monitoring |
+| VIN | 5V | Power |
+| GND | GND | Ground |
+
+> **Note:** These pin assignments are configured through the `platformio.ini` build flags for the `esp32-s3-zero` environment and may be adjusted if your hardware layout requires different pins.
 
 ## Hardware Needed
 *   NFC Reader/Writer: PN5180 NFC module (ISO 15693)
-*   LCD Screen: [16x2 I2C LCD](https://a.co/d/dryhwvd) (only 1 needed)
-*   ESP32: [ESP32 DevKitC V4](https://a.co/d/gW3zBIJ) (only 1 needed)
+*   ESP32 Option 1: [ESP32 DevKitC V4](https://a.co/d/gW3zBIJ) (full scanner build)
+*   ESP32 Option 2: ESP32‑S3‑Zero (compact scanner build, no LCD required)
+*   16x2 I2C LCD module | 1 | 
 *   USB Cable: USB-A to USB-C (1)
 *   Jumper wires: male-to-female Dupont wires (9)
 *   Optional Status LED: SK6812 RGBW (WS2812-compatible addressable LED, 1 pixel)
@@ -55,7 +165,8 @@ The firmware is configured for **SK6812 RGBW timing and color order** using:
 
 Default LED data pin:
 
-`GPIO4`
+GPIO4 (ESP32 DevKit default)  
+GPIO21 (ESP32‑S3‑Zero onboard LED)
 
 > **Note:** A single SK6812 RGBW LED module is recommended. Many small breakout boards include the necessary capacitor and resistor already. If using a bare LED, a ~330Ω resistor on the data line is recommended for signal stability.
 
